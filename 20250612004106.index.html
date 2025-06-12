@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幼儿园数字认知 (1-10) - 最终优化版</title>
+    <style>
+        /* --- 基础和布局 --- */
+        :root {
+            /* 定义颜色变量 */
+            --bg-color: #f0f8ff; /* 淡爱丽丝蓝 */
+            --container-bg: #ffffff;
+            --container-border: #a0d2eb; /* 柔和蓝 */
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.12);
+            --text-primary: #37474f; /* 深蓝灰色 */
+            --text-secondary: #546e7a; /* 中蓝灰色 */
+            --accent-blue: #4fc3f7; /* 亮蓝 */
+            --accent-blue-dark: #29b6f6;
+            --accent-pink: #ff80ab; /* 粉红 */
+            --accent-pink-dark: #f06292; /* 深粉红 */
+            --accent-teal: #4db6ac; /* 青色 */
+            --accent-teal-dark: #26a69a; /* 深青色 */
+            --accent-orange: #ffb74d; /* 橙色 */
+            --accent-orange-dark: #ffa726;
+            --correct-color: #81c784; /* 柔和绿 */
+            --incorrect-color: #e57373; /* 柔和红 */
+            --disabled-color: #bdbdbd; /* 灰色 */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif; /* 优先使用常见中文字体 */
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center; /* 水平居中容器 */
+            align-items: flex-start; /* 顶部对齐 */
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none; /* 禁止选取文字 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            padding-top: 30px; /* 给顶部一些空间 */
+            padding-bottom: 30px; /* 给底部一些空间 */
+            overflow-x: auto; /* 如果容器比视窗宽，允许水平滚动 */
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 30px;
+            box-shadow: 0 12px 25px var(--shadow-medium), inset 0 2px 4px var(--shadow-light);
+            padding: 35px 45px;
+            text-align: center;
+            width: 800px; /* 固定宽度 */
+            border: 8px solid var(--container-border);
+            box-sizing: border-box;
+            margin: 20px auto;
+        }
+
+        /* --- 功能切换选项卡 --- */
+        .navigation-tabs {
+            margin-bottom: 25px; /* 减少底部外边距 */
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            border-bottom: 2px solid var(--container-border);
+        }
+
+        .tab-button {
+            padding: 14px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            background-color: transparent; /* 未选中时背景透明 */
+            color: var(--text-secondary); /* 未选中时文字颜色稍淡 */
+            margin-bottom: -2px;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background-color: rgba(0, 0, 0, 0.03); /* 悬停时非常淡的灰色 */
+            color: var(--text-primary);
+        }
+
+        /* 活动标签页样式 */
+        .tab-button.active {
+            border-color: var(--accent-orange);
+            color: var(--text-primary);
+            background-color: var(--container-bg);
+        }
+        #btn-recognize.active { border-color: var(--accent-pink); color: var(--accent-pink); }
+        #btn-count.active { border-color: var(--accent-teal); color: var(--accent-teal); }
+
+
+        /* --- 内容区域 --- */
+        .content-section {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        .content-section.active {
+            display: block;
+        }
+
+        /* --- 认识数字模组 --- */
+        #recognizeNumbers .display-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 45px;
+            min-height: 240px;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-sizing: border-box;
+        }
+
+        #recognizeNumbers .number-display {
+            font-size: 7.5em;
+            font-weight: bold;
+            color: var(--accent-blue);
+            flex-basis: 40%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+            min-height: 1.2em;
+            transform: scale(1);
+            opacity: 0;
+        }
+        #recognizeNumbers .number-display.show {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        #recognizeNumbers .objects-display {
+            flex-basis: 50%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            min-height: 180px;
+            transition: opacity 0.3s ease-in-out;
+            box-sizing: border-box;
+            padding: 10px 0;
+            opacity: 0;
+        }
+        #recognizeNumbers .objects-display.show {
+             opacity: 1;
+         }
+
+        #recognizeNumbers .object-item {
+            font-size: 3.8em;
+            transition: transform 0.2s ease;
+            line-height: 1;
+            cursor: default;
+        }
+        #recognizeNumbers .object-item:hover {
+            transform: scale(1.12);
+        }
+
+        #recognizeNumbers .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 50px;
+        }
+
+        #recognizeNumbers .nav-button {
+            background-color: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px var(--shadow-light);
+            white-space: nowrap; /* 强制文字不换行 */
+        }
+
+        #recognizeNumbers .nav-button:hover {
+            background-color: var(--accent-orange-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px var(--shadow-medium);
+        }
+
+        #recognizeNumbers .nav-button:active {
+            background-color: var(--accent-orange-dark);
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px var(--shadow-light);
+        }
+
+        #recognizeNumbers .nav-button:disabled {
+            background-color: var(--disabled-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+        /* --- 数物对应模组 --- */
+        #countObjects .target-number-container {
+            background-color: #fff3e0;
+            border: 3px solid var(--accent-orange);
+            border-radius: 20px;
+            padding: 18px 35px;
+            margin-bottom: 40px;
+            display: inline-block;
+            box-shadow: 0 3px 8px var(--shadow-light);
+        }
+
+        #countObjects .target-number {
+            font-size: 4.8em;
+            color: var(--text-primary);
+            font-weight: bold;
+        }
+
+        #countObjects .options-container {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        #countObjects .option {
+            background-color: #e8f5e9;
+            border: 4px solid transparent;
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.3s ease, box-shadow 0.25s ease;
+            min-width: 110px;
+            min-height: 110px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            box-shadow: 0 4px 8px var(--shadow-light);
+            text-align: center;
+        }
+
+        #countObjects .option:hover {
+            transform: scale(1.06) translateY(-3px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 7px 14px var(--shadow-medium);
+            background-color: #ffffff;
+        }
+
+        #countObjects .option-content {
+            font-size: 3em;
+            line-height: 1.1;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        #countObjects .option[data-count="8"] .option-content,
+        #countObjects .option[data-count="9"] .option-content,
+        #countObjects .option[data-count="10"] .option-content {
+            font-size: 2.4em;
+        }
+
+        #countObjects .feedback-message {
+            font-size: 1.7em;
+            font-weight: bold;
+            min-height: 1.7em;
+            margin-top: 25px;
+            transition: color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+            transform: scale(0.9);
+            opacity: 0;
+            color: var(--text-primary);
+        }
+        #countObjects .feedback-message.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        #countObjects .feedback-correct { color: var(--correct-color) !important; }
+        #countObjects .feedback-incorrect { color: var(--incorrect-color) !important; }
+
+        /* --- 动画效果 --- */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+          10%, 90% { transform: translateX(-2px); }
+          20%, 80% { transform: translateX(3px); }
+          30%, 50%, 70% { transform: translateX(-5px); }
+          40%, 60% { transform: translateX(5px); }
+        }
+
+        .correct-glow { animation: correct-glow 1s ease-out forwards; }
+        @keyframes correct-glow {
+          0% { box-shadow: 0 0 0px 0px rgba(129, 199, 132, 0); border-color: transparent; }
+          50% { box-shadow: 0 0 18px 12px rgba(129, 199, 132, 0.6); border-color: var(--correct-color); transform: scale(1.03); }
+          100% { box-shadow: 0 0 8px 4px rgba(129, 199, 132, 0.2); border-color: var(--correct-color); transform: scale(1); }
+        }
+
+
+        /* --- 响应式设计 --- */
+        @media (max-width: 850px) {
+            #recognizeNumbers .number-display { font-size: 7em; }
+            #recognizeNumbers .object-item { font-size: 3.5em; }
+            #countObjects .target-number { font-size: 4.5em; }
+            #countObjects .option-content { font-size: 2.8em; }
+            #countObjects .option[data-count="8"] .option-content,
+            #countObjects .option[data-count="9"] .option-content,
+            #countObjects .option[data-count="10"] .option-content { font-size: 2.2em; }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 25px 20px; }
+            .tab-button { padding: 12px 20px; font-size: 1.1em; }
+
+            #recognizeNumbers .display-area { flex-direction: column; min-height: auto; gap: 15px; margin-bottom: 35px;}
+            #recognizeNumbers .number-display { font-size: 6em; flex-basis: auto; margin-bottom: 15px;}
+            #recognizeNumbers .objects-display { flex-basis: auto; min-height: 150px; gap: 10px;}
+            #recognizeNumbers .object-item { font-size: 3em; }
+
+            #recognizeNumbers .navigation { margin-top: 25px; gap: 20px; flex-direction: column; }
+            #recognizeNumbers .nav-button {
+                padding: 12px 25px;
+                font-size: 1.1em;
+            }
+
+            #countObjects .target-number-container { padding: 15px 30px; margin-bottom: 30px;}
+            #countObjects .target-number { font-size: 3.8em; }
+            #countObjects .options-container { gap: 15px; flex-direction: column; align-items: center;}
+            #countObjects .option { padding: 15px; min-width: 150px; min-height: 90px; width: 70%; }
+            #countObjects .option-content { font-size: 2.5em; }
+             #countObjects .option[data-count="8"] .option-content,
+             #countObjects .option[data-count="9"] .option-content,
+             #countObjects .option[data-count="10"] .option-content { font-size: 2.1em;}
+            #countObjects .feedback-message { font-size: 1.5em; }
+        }
+
+        @media (max-width: 480px) {
+             .container { padding: 20px 15px; border-width: 6px;}
+             #recognizeNumbers .number-display { font-size: 5.5em; }
+             #recognizeNumbers .object-item { font-size: 2.8em; }
+             #countObjects .target-number { font-size: 3.5em; }
+             #countObjects .option-content { font-size: 2.3em; }
+             #countObjects .option[data-count="8"] .option-content,
+             #countObjects .option[data-count="9"] .option-content,
+             #countObjects .option[data-count="10"] .option-content { font-size: 1.9em;}
+             #countObjects .feedback-message { font-size: 1.4em; }
+             #countObjects .option { width: 80%; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="navigation-tabs">
+        <button id="btn-recognize" class="tab-button active" onclick="showSection('recognizeNumbers')">认识数字</button>
+        <button id="btn-count" class="tab-button" onclick="showSection('countObjects')">数物对应</button>
+    </div>
+
+    <div id="recognizeNumbers" class="content-section active">
+        <div class="display-area">
+            <div id="number-display" class="number-display"></div>
+            <div id="objects-display" class="objects-display"></div>
+        </div>
+        <div class="navigation">
+           
+            <button id="prev-btn" class="nav-button" disabled>上一个</button>
+            <button id="next-btn" class="nav-button">下一个</button>
+           
+        </div>
+    </div>
+
+    <div id="countObjects" class="content-section">
+         <div class="target-number-container"><span id="target-number" class="target-number">?</span></div>
+        <div id="options-container" class="options-container"></div>
+        <div id="feedback" class="feedback-message"></div>
+    </div>
+</div>
+
+<script>
+    // --- 全局变量：获取 DOM 元素 ---
+    const recognizeSection = document.getElementById('recognizeNumbers');
+    const countSection = document.getElementById('countObjects');
+    const numberDisplay = document.getElementById('number-display');
+    const objectsDisplay = document.getElementById('objects-display');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const targetEl = document.getElementById('target-number');
+    const optionsEl = document.getElementById('options-container');
+    const feedbackEl = document.getElementById('feedback');
+    const recognizeTabBtn = document.getElementById('btn-recognize');
+    const countTabBtn = document.getElementById('btn-count');
+
+    // --- 通用功能：切换显示的内容区域 ---
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+        const currentSec = document.getElementById(sectionId);
+        if (currentSec) {
+            currentSec.classList.add('active');
+
+            if (sectionId === 'recognizeNumbers') {
+                recognizeTabBtn.classList.add('active');
+            } else if (sectionId === 'countObjects') {
+                countTabBtn.classList.add('active');
+            }
+
+            if (sectionId === 'recognizeNumbers' && !recognizeSection.dataset.initialized) {
+                initializeRecognizeNumbers();
+                recognizeSection.dataset.initialized = 'true';
+            } else if (sectionId === 'countObjects' && !countSection.dataset.initialized) {
+                initializeCountObjects();
+                countSection.dataset.initialized = 'true';
+            }
+        }
+    }
+
+    // --- 认识数字模组 JavaScript ---
+    function initializeRecognizeNumbers() {
+        const items = [
+            { n: 1, o: '🍎' }, { n: 2, o: '⭐️' }, { n: 3, o: '🎈' }, { n: 4, o: '🚗' }, { n: 5, o: '🧸' },
+            { n: 6, o: '⚽️' }, { n: 7, o: '🧁' }, { n: 8, o: '🐟' }, { n: 9, o: '🔑' }, { n: 10, o: '☀️' }
+        ];
+        let currentIndex = 0;
+        const maxIndex = items.length - 1;
+
+        function updateDisplay() {
+            const item = items[currentIndex];
+            numberDisplay.style.opacity = 0;
+            numberDisplay.classList.remove('show');
+            objectsDisplay.style.opacity = 0;
+            objectsDisplay.classList.remove('show');
+
+            setTimeout(() => {
+                numberDisplay.textContent = item.n;
+                objectsDisplay.innerHTML = '';
+                for (let i = 0; i < item.n; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'object-item';
+                    span.textContent = item.o;
+                    objectsDisplay.appendChild(span);
+                }
+                numberDisplay.style.opacity = 1;
+                numberDisplay.classList.add('show');
+                objectsDisplay.style.opacity = 1;
+                objectsDisplay.classList.add('show');
+                prevBtn.disabled = (currentIndex === 0);
+                nextBtn.disabled = (currentIndex === maxIndex);
+            }, 300);
+        }
+
+        prevBtn.onclick = () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateDisplay();
+            }
+        };
+        nextBtn.onclick = () => {
+            if (currentIndex < maxIndex) {
+                currentIndex++;
+                updateDisplay();
+            }
+        };
+        updateDisplay(); // Initial load
+    }
+
+    // --- 数物对应模组 JavaScript ---
+     function initializeCountObjects() {
+        const problems = [
+             { target: 1, options: [ { display: '🍎', count: 1 }, { display: '🐻🐻', count: 2 }, { display: '⭐⭐⭐', count: 3 } ] },
+             { target: 2, options: [ { display: '⚽️', count: 1 }, { display: '🧸🧸', count: 2 }, { display: '🚗<br>🚗<br>🚗', count: 3 } ] },
+             { target: 3, options: [ { display: '⭐', count: 1 }, { display: '🍭🍭', count: 2 }, { display: '🎈🎈🎈', count: 3 } ] },
+             { target: 4, options: [ { display: '🥕', count: 1 }, { display: '🐇<br>🐇', count: 2 }, { display: '🍓🍓🍓🍓', count: 4 } ] },
+             { target: 5, options: [ { display: '🌙', count: 1 }, { display: '☀️☀️☀️', count: 3 }, { display: '☁️☁️☁️☁️☁️', count: 5 } ] },
+             { target: 6, options: [ { display: '🍎🍎🍎🍎', count: 4 }, { display: '⚽️⚽️⚽️⚽️⚽️⚽️', count: 6 }, { display: '⭐⭐⭐⭐⭐⭐⭐', count: 7 } ] },
+             { target: 7, options: [ { display: '🎈🎈🎈🎈🎈', count: 5 }, { display: '🧁🧁🧁🧁🧁🧁🧁', count: 7 }, { display: '🔑🔑🔑🔑🔑🔑🔑🔑', count: 8 } ] },
+             { target: 8, options: [ { display: '🧸🧸🧸🧸🧸🧸', count: 6 }, { display: '🐟<br>🐟<br>🐟<br>🐟<br>🐟<br>🐟<br>🐟<br>🐟', count: 8 }, { display: '☀️☀️☀️☀️☀️☀️☀️☀️☀️', count: 9 } ] },
+             { target: 9, options: [ { display: '🚗🚗🚗🚗🚗🚗🚗', count: 7 }, { display: '🔑🔑🔑🔑🔑🔑🔑🔑🔑', count: 9 }, { display: '🍎🍎🍎🍎🍎🍎🍎🍎🍎🍎', count: 10 } ] },
+             { target: 10, options: [ { display: '⚽️⚽️⚽️⚽️⚽️⚽️⚽️⚽️', count: 8 }, { display: '⭐⭐⭐⭐⭐⭐⭐⭐⭐', count: 9 }, { display: '☀️☀️☀️☀️☀️<br>☀️☀️☀️☀️☀️', count: 10 } ] }
+         ];
+        let currentProblemIndex = 0;
+        let currentTargetNumber = 0;
+        let acceptingAnswers = true;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+         function showFeedback(message, isCorrect) {
+             feedbackEl.textContent = message;
+             feedbackEl.className = 'feedback-message';
+             void feedbackEl.offsetWidth;
+             feedbackEl.classList.add('show');
+             if (isCorrect) {
+                 feedbackEl.classList.add('feedback-correct');
+             } else {
+                 feedbackEl.classList.add('feedback-incorrect');
+             }
+         }
+
+        function loadProblem() {
+            acceptingAnswers = true;
+            feedbackEl.textContent = '';
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.classList.remove('show');
+
+            if (currentProblemIndex >= problems.length || currentProblemIndex < 0) {
+                currentProblemIndex = 0;
+            }
+
+            const problem = problems[currentProblemIndex];
+            currentTargetNumber = problem.target;
+            targetEl.textContent = currentTargetNumber;
+
+            optionsEl.innerHTML = '';
+            const shuffledOptions = shuffle([...problem.options]);
+
+            shuffledOptions.forEach(optionData => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.dataset.count = optionData.count;
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'option-content';
+                contentSpan.innerHTML = optionData.display;
+                optionDiv.appendChild(contentSpan);
+                optionDiv.onclick = handleOptionClick;
+                optionsEl.appendChild(optionDiv);
+            });
+        }
+
+        function handleOptionClick(event) {
+            if (!acceptingAnswers) return;
+            const clickedOption = event.currentTarget;
+            const clickedCount = parseInt(clickedOption.dataset.count);
+
+            document.querySelectorAll('#countObjects .option').forEach(opt => {
+                opt.classList.remove('shake', 'correct-glow');
+            });
+             void clickedOption.offsetWidth;
+
+            if (clickedCount === currentTargetNumber) {
+                acceptingAnswers = false;
+                showFeedback('真棒！答对了！', true);
+                clickedOption.classList.add('correct-glow');
+                setTimeout(() => {
+                    currentProblemIndex = (currentProblemIndex + 1) % problems.length;
+                    loadProblem();
+                }, 1800);
+            } else {
+                showFeedback('再试一次吧！', false);
+                clickedOption.classList.add('shake');
+                 setTimeout(() => { acceptingAnswers = true; }, 500);
+            }
+        }
+
+        currentProblemIndex = Math.floor(Math.random() * problems.length); // Start at a random problem
+        loadProblem(); // Initial load
+    }
+
+    // --- 页面加载完成后执行的初始化 ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // 默认显示并初始化第一个模组（认识数字）
+        showSection('recognizeNumbers');
+    });
+</script>
+
+</body>
+</html>
